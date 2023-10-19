@@ -100,6 +100,7 @@ export async function runForegroundedAction<Params>(act: (params: Params, api: F
         return;
       }
     } else {
+      console.log("Running in JS")
       setRunning(true);
       await action(identifier);
     }
