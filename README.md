@@ -1,4 +1,4 @@
-# expo-foreground-actions
+# expo-foreground-action(s)
 
 My new module
 
