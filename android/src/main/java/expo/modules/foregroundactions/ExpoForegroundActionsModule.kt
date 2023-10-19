@@ -1,0 +1,121 @@
+package expo.modules.foregroundactions
+
+import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.os.Build
+import expo.modules.kotlin.Promise
+import expo.modules.kotlin.exception.CodedException
+import expo.modules.kotlin.exception.toCodedException
+import expo.modules.kotlin.modules.Module
+import expo.modules.kotlin.modules.ModuleDefinition
+
+
+const val ON_EXPIRATION_EVENT = "onExpirationEvent"
+
+class ExpoForegroundActionsModule : Module() {
+    private var currentServiceIntent: Intent? = null
+
+
+    // Each module class must implement the definition function. The definition consists of components
+    // that describes the module's functionality and behavior.
+    // See https://docs.expo.dev/modules/module-api for more details about available components.
+    @SuppressLint("DiscouragedApi")
+    override fun definition() = ModuleDefinition {
+        Events(ON_EXPIRATION_EVENT)
+
+        // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
+        // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
+        // The module will be accessible from `requireNativeModule('ExpoForegroundActions')` in JavaScript.
+        Name("ExpoForegroundActions")
+
+
+        AsyncFunction("startForegroundAction") { options: ExpoForegroundOptions, promise: Promise ->
+            try {
+                if (currentServiceIntent != null) {
+                    promise.reject(CodedException("There is still a unstopped service running"))
+                } else {                // Stop any other intent
+                    // Create the service
+                    val intent = Intent(context, ExpoForegroundActionsService::class.java)
+                    intent.putExtra("headlessTaskName", options.headlessTaskName)
+                    intent.putExtra("notificationTitle", options.notificationTitle)
+                    intent.putExtra("notificationDesc", options.notificationDesc)
+                    intent.putExtra("notificationColor", options.notificationColor)
+                    val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
+                    intent.putExtra("notificationIconInt", notificationIconInt)
+
+                    /*Save as reference so we can stop it next time*/
+                    currentServiceIntent = intent;
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        println("Running startForegroundService")
+                        context.startService(currentServiceIntent)
+                    } else {
+                        println("Not Running")
+
+                    }
+                    promise.resolve(null)
+                }
+            } catch (e: Exception) {
+                println(e.message);
+
+                // Handle other exceptions
+                promise.reject(e.toCodedException())
+            }
+        }
+
+        AsyncFunction("stopForegroundAction") { promise: Promise ->
+            try {
+                if (currentServiceIntent == null) {
+                    promise.reject(CodedException("There is no service to be stopped"))
+                } else {
+                    context.stopService(currentServiceIntent)
+                    currentServiceIntent = null;
+                }
+                promise.resolve(null)
+            } catch (e: Exception) {
+                println(e.message);
+                currentServiceIntent = null;
+                // Handle other exceptions
+                promise.reject(e.toCodedException())
+            }
+        }
+
+        AsyncFunction("updateForegroundedAction") { options: ExpoForegroundOptions, promise: Promise ->
+            try {
+                val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
+                val notification: Notification = ExpoForegroundActionsService.buildNotification(
+                        context,
+                        options.notificationTitle,
+                        options.notificationDesc,
+                        Color.parseColor(options.notificationColor),
+                        notificationIconInt,
+                        options.notificationProgress,
+                        options.notificationMaxProgress,
+                        options.notificationIndeterminate
+                );
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(ExpoForegroundActionsService.SERVICE_NOTIFICATION_ID, notification)
+                promise.resolve(null)
+            } catch (e: Exception) {
+                println(e.message);
+                currentServiceIntent = null;
+                // Handle other exceptions
+                promise.reject(e.toCodedException())
+            }
+        }
+    }
+
+    private val context
+        get() = requireNotNull(appContext.reactContext) {
+            "React Application Context is null"
+        }
+
+    private val applicationContext
+        get() = requireNotNull(this.context.applicationContext) {
+            "React Application Context is null"
+        }
+}
