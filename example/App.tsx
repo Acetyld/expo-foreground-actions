@@ -4,6 +4,7 @@ import {
 } from "expo-foreground-actions";
 import { useEffect, useRef } from "react";
 import {
+  AppState,
   Button,
   Platform,
   StatusBar,
@@ -51,6 +52,7 @@ export default function App() {
               iosIdentifier,
               headlessTaskName
             }) => {
+              console.log('[AppState.currentState]: ',AppState.currentState);
               console.log(test);
               console.log(iosIdentifier);
               let time = Date.now();

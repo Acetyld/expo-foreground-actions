@@ -15,8 +15,9 @@ export interface ExpoForegroundOptions {
   notificationIndeterminate: boolean;
   runInJS?: boolean;
 }
+
 export interface ForegroundApi {
-  iosIdentifier?: number;
+  identifier: number;
   headlessTaskName: string;
 }
 export type ForegroundAction<Params> = (params: Params, api: ForegroundApi) => Promise<void>;

@@ -19,8 +19,8 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class ExpoForegroundActionsService : HeadlessJsTaskService() {
     companion object {
-        const val SERVICE_NOTIFICATION_ID = 92901
-        private const val CHANNEL_ID = "RN_BACKGROUND_ACTIONS_CHANNEL"
+        const val SERVICE_NOTIFICATION_ID = 91242168
+        private const val CHANNEL_ID = "ExpoForegroundActionChannel"
         fun buildNotification(
                 context: Context,
                 notificationTitle: String,
@@ -45,6 +45,7 @@ class ExpoForegroundActionsService : HeadlessJsTaskService() {
                     .setSmallIcon(notificationIconInt)
                     .setContentIntent(contentIntent)
                     .setOngoing(true)
+                    .setSilent(true)
                     .setProgress(notificationMaxProgress, notificationProgress, notificationIndeterminate)
                     .setPriority(NotificationCompat.PRIORITY_MIN)
                     .setColor(notificationColor)

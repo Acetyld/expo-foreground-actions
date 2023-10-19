@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.os.Build
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.toCodedException
@@ -18,6 +17,7 @@ const val ON_EXPIRATION_EVENT = "onExpirationEvent"
 
 class ExpoForegroundActionsModule : Module() {
     private var currentServiceIntent: Intent? = null
+    private var currentId: Int = 0
 
 
     // Each module class must implement the definition function. The definition consists of components
@@ -49,15 +49,11 @@ class ExpoForegroundActionsModule : Module() {
 
                     /*Save as reference so we can stop it next time*/
                     currentServiceIntent = intent;
+                    currentId = currentId.plus(1);
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        println("Running startForegroundService")
-                        context.startService(currentServiceIntent)
-                    } else {
-                        println("Not Running")
+                    context.startService(currentServiceIntent)
 
-                    }
-                    promise.resolve(null)
+                    promise.resolve(currentId)
                 }
             } catch (e: Exception) {
                 println(e.message);
@@ -67,21 +63,24 @@ class ExpoForegroundActionsModule : Module() {
             }
         }
 
-        AsyncFunction("stopForegroundAction") { promise: Promise ->
+        AsyncFunction("stopForegroundAction") { id: Int, promise: Promise ->
             try {
-                if (currentServiceIntent == null) {
-                    promise.reject(CodedException("There is no service to be stopped"))
-                } else {
+                if (currentServiceIntent != null) {
                     context.stopService(currentServiceIntent)
                     currentServiceIntent = null;
+                    currentId = 0;
+                } else {
+                    println("Intent task with UUID: $id does not exist or has already been ended.")
+
                 }
-                promise.resolve(null)
             } catch (e: Exception) {
                 println(e.message);
                 currentServiceIntent = null;
+                currentId = 0;
                 // Handle other exceptions
                 promise.reject(e.toCodedException())
             }
+            promise.resolve(null)
         }
 
         AsyncFunction("updateForegroundedAction") { options: ExpoForegroundOptions, promise: Promise ->

@@ -5,9 +5,13 @@ import {
   Platform
 } from "expo-modules-core";
 import { platformApiLevel } from "expo-device";
-import { ExpireEventPayload, ExpoForegroundOptions, ForegroundApi } from "./ExpoForegroundActions.types";
+import {
+  ExpireEventPayload,
+  ExpoForegroundOptions,
+  ForegroundApi,
+} from "./ExpoForegroundActions.types";
 import ExpoForegroundActionsModule from "./ExpoForegroundActionsModule";
-import { AppRegistry } from "react-native";
+import { AppRegistry, AppState } from "react-native";
 
 const emitter = new EventEmitter(
   ExpoForegroundActionsModule ?? NativeModulesProxy.ExpoForegroundActions
@@ -17,7 +21,6 @@ let identifier: number = 0;
 let runningTasks: number = 0;
 let _isRunning = false;
 
-export const isRunning = () => _isRunning;
 
 const setRunning = (val: boolean) => {
   if (val) {
@@ -25,73 +28,86 @@ const setRunning = (val: boolean) => {
     runningTasks++;
   } else {
     _isRunning = false;
+    identifier = 0;
   }
 };
+
+export class NotForegroundedError extends Error {
+  constructor(message) {
+    super(message); // (1)
+    this.name = "NotForegroundedError"; // (2)
+  }
+}
 
 
 // Get the native constant value.
 export async function runForegroundedAction<Params>(act: (params: Params, api: ForegroundApi) => Promise<void>, initialOptions: ExpoForegroundOptions & {
   params: Params
 }): Promise<void> {
-  if (Platform.OS === "ios" && identifier) {
-    throw new Error("Foreground action is already running");
-  }
   if (!initialOptions) {
     throw new Error("Foreground action options cannot be null");
   }
-  const createAction = (resolve: () => void, options: ExpoForegroundOptions) => {
-    const headlessTaskName = `${options.headlessTaskName}${runningTasks}`;
-    return {
-      action: async (iosIdentifier?: number) => {
+  if (identifier) {
+    throw new Error("Foreground action is already running");
+  }
+
+  if (AppState.currentState === "background") {
+    throw new NotForegroundedError("Foreground actions can only be run in the foreground");
+  }
 
 
-        await act(initialOptions.params, {
-          iosIdentifier,
-          headlessTaskName
-        });
+  const headlessTaskName = `${initialOptions.headlessTaskName}${runningTasks}`;
 
-        if (iosIdentifier) {
-          await ExpoForegroundActionsModule.stopForegroundAction(iosIdentifier);
-        } else {
-          await ExpoForegroundActionsModule.stopForegroundAction();
-        }
-        resolve();
-      },
-      options: { ...options, headlessTaskName }
-    };
+  const options = { ...initialOptions, headlessTaskName };
+  const action = async (identifier: number) => {
+    if (AppState.currentState === "background") {
+      throw new NotForegroundedError("Foreground actions can only be run in the foreground");
+    }
+    await act(initialOptions.params, {
+      identifier,
+      headlessTaskName
+    });
   };
 
+  try {
+    if (Platform.OS !== "ios" && Platform.OS !== "android") {
+      throw new Error("Unsupported platform, currently only ios and android are supported");
+    }
 
-  await new Promise<void>(async (resolve, reject) => {
-    const { action, options } = createAction(resolve, initialOptions);
-    try {
-      if (options.runInJS !== true) {
-        if (Platform.OS === "android" && (!platformApiLevel || platformApiLevel >= 26)) {
-          /*On older devices we "just" run it.*/
-          setRunning(true);
-          AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => await action());
-          await ExpoForegroundActionsModule.startForegroundAction(options);
-          return;
-        }
-        if (Platform.OS === "ios") {
-          setRunning(true);
-          const iosIdentifier = await ExpoForegroundActionsModule.startForegroundAction();
-          await action(iosIdentifier);
-          identifier = 0;
-          return;
-        }
-        console.error("Unsupported platform");
+    if (options.runInJS !== true) {
+      if (Platform.OS === "android" && (!platformApiLevel || platformApiLevel >= 26)) {
+        /*On older devices we "just" run it.*/
+        setRunning(true);
+        await (new Promise<void>(async (resolve, reject) => {
+          try {
+            AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => {
+              await action(identifier);
+              resolve();
+            });
+            identifier = await ExpoForegroundActionsModule.startForegroundAction(options);
+          } catch (e) {
+            reject(e);
+            throw e;
+          }
+        }));
         return;
       }
+      if (Platform.OS === "ios") {
+        setRunning(true);
+        identifier = await ExpoForegroundActionsModule.startForegroundAction();
+        console.log("Started foreground action with identifier:", identifier);
+        await action(identifier);
+        return;
+      }
+    } else {
       setRunning(true);
-      await action();
-
-    } catch (e) {
-      setRunning(false);
-      reject(e);
+      await action(identifier);
     }
-  });
-  setRunning(false);
+  } finally {
+    console.log("Finally, we have the indifier:", identifier);
+    await ExpoForegroundActionsModule.stopForegroundAction(identifier);
+    setRunning(false);
+  }
 }
 
 export async function updateForegroundedAction(options: ExpoForegroundOptions) {
@@ -99,9 +115,17 @@ export async function updateForegroundedAction(options: ExpoForegroundOptions) {
   return ExpoForegroundActionsModule.updateForegroundedAction(options);
 }
 
+export async function forceStopForegroundedAction() {
+  await ExpoForegroundActionsModule.stopForegroundAction(identifier);
+}
+
+export const getCurrentIosIdentifier = () => identifier;
+
+export const isRunning = () => _isRunning;
+
 
 export async function getBackgroundTimeRemaining(): Promise<number> {
-  if (Platform.OS !== "ios") return 0;
+  if (Platform.OS !== "ios") return -1;
   return await ExpoForegroundActionsModule.getBackgroundTimeRemaining();
 }
 
