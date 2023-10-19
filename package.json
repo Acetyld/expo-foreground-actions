@@ -1,6 +1,6 @@
 {
   "name": "expo-foreground-actions",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "My new module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -18,6 +18,8 @@
   "keywords": [
     "react-native",
     "expo",
+    "expo-modules-api",
+    "expo-modules",
     "expo-foreground-actions",
     "ExpoForegroundActions"
   ],
