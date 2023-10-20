@@ -46,11 +46,22 @@ export class ForegroundAlreadyRunningError extends Error {
   }
 }
 
+const startForegroundAction = async (options?: ExpoForegroundOptions): Promise<number> => {
+  if (Platform.OS === "android" && !options) {
+    throw new Error("Foreground action options cannot be null on android");
+  }
+  if (Platform.OS === "android") {
+    return ExpoForegroundActionsModule.startForegroundAction(options);
+  } else {
+    return ExpoForegroundActionsModule.startForegroundAction();
+  }
+};
+
 
 // Get the native constant value.
-export async function runForegroundedAction<Params>(act: (params: Params, api: ForegroundApi) => Promise<void>, initialOptions: ExpoForegroundOptions & {
+export const runForegroundedAction = async <Params>(act: (params: Params, api: ForegroundApi) => Promise<void>, initialOptions: ExpoForegroundOptions & {
   params: Params
-}): Promise<void> {
+}): Promise<void> => {
   if (!initialOptions) {
     throw new Error("Foreground action options cannot be null");
   }
@@ -130,28 +141,19 @@ export async function runForegroundedAction<Params>(act: (params: Params, api: F
     }
     setRunning(false);
   }
-}
+};
 
-async function startForegroundAction(options?: ExpoForegroundOptions): Promise<number> {
-  if (Platform.OS === "android" && !options) {
-    throw new Error("Foreground action options cannot be null on android");
-  }
-  if (Platform.OS === "android") {
-    return ExpoForegroundActionsModule.startForegroundAction(options);
-  } else {
-    return ExpoForegroundActionsModule.startForegroundAction();
-  }
-}
-
-export async function updateForegroundedAction(options: ExpoForegroundOptions) {
+export const updateForegroundedAction = async (options: ExpoForegroundOptions) => {
   if (Platform.OS !== "android") return;
   return ExpoForegroundActionsModule.updateForegroundedAction(options);
-}
+};
 
-export async function stopForegroundAction() {
+// noinspection JSUnusedGlobalSymbols
+
+export const stopForegroundAction = async (): Promise<void> => {
   await ExpoForegroundActionsModule.stopForegroundAction();
   setRunning(false);
-}
+};
 
 // noinspection JSUnusedGlobalSymbols
 export const getForegroundIdentifier = async (): Promise<number> => ExpoForegroundActionsModule.getForegroundIdentifier();
@@ -161,10 +163,10 @@ export const isRunning = () => _isRunning;
 export const getRunningTasks = () => runningTasks;
 
 
-export async function getBackgroundTimeRemaining(): Promise<number> {
+export const getBackgroundTimeRemaining = async (): Promise<number> => {
   if (Platform.OS !== "ios") return -1;
   return await ExpoForegroundActionsModule.getBackgroundTimeRemaining();
-}
+};
 
 
 export function addExpirationListener(
