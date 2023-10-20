@@ -16,26 +16,24 @@ public class ExpoForegroundActionsModule: Module {
         
         AsyncFunction("startForegroundAction") { (promise: Promise) in
     
-    
-            print("Executing...")
-            
-            self.identifier = UIApplication.shared.beginBackgroundTask {
-                // Expiration block, perform cleanup including endBackgroundTask
-                print("Expiring...")
-                self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining);
-                UIApplication.shared.endBackgroundTask(self.identifier)
+            if(self.identifier != UIBackgroundTaskIdentifier.invalid){
+                promise.reject("ALREADY_RUNNING","There is still a unstopped service running")
+            } else {
+                self.identifier = UIApplication.shared.beginBackgroundTask {
+                    // Expiration block, perform cleanup including endBackgroundTask
+                    self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining);
+                    UIApplication.shared.endBackgroundTask(self.identifier)
+                }
+                promise.resolve(self.identifier.rawValue)
             }
-            
-            print("Resolving...")
-            
-            promise.resolve(self.identifier.rawValue)
         }
         AsyncFunction("stopForegroundAction") { (force:Bool, promise: Promise) in
             if self.identifier != UIBackgroundTaskIdentifier.invalid {
                 UIApplication.shared.endBackgroundTask(self.identifier)
                 self.identifier = UIBackgroundTaskIdentifier.invalid;
+                print("Background task with identifier \(self.identifier) has been ended")
             } else {
-                print("Background task with identifier \(self.identifier) does not exist or has already been ended.")
+                print("Background task with identifier \(self.identifier) does not exist or has already been ended")
             }
             if(force){
                 self.identifier = UIBackgroundTaskIdentifier.invalid;

@@ -124,6 +124,7 @@ const runIos = async (action: () => Promise<void>, options: ExpoForegroundOption
   } catch (e){
     throw e;
   } finally {
+    console.log("Stopping on IOS");
     await stopForegroundAction();
   }
 };
