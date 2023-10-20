@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.toCodedException
@@ -46,13 +47,19 @@ class ExpoForegroundActionsModule : Module() {
                     intent.putExtra("notificationColor", options.notificationColor)
                     val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
                     intent.putExtra("notificationIconInt", notificationIconInt)
+                    intent.putExtra("notificationProgress", options.notificationProgress)
+                    intent.putExtra("notificationMaxProgress", options.notificationMaxProgress)
+                    intent.putExtra("notificationIndeterminate", options.notificationIndeterminate)
+
 
                     /*Save as reference so we can stop it next time*/
                     currentServiceIntent = intent;
                     currentId = currentId.plus(1);
-
-                    context.startService(currentServiceIntent)
-
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(currentServiceIntent)
+                    } else {
+                        context.startService(currentServiceIntent)
+                    }
                     promise.resolve(currentId)
                 }
             } catch (e: Exception) {

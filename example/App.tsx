@@ -100,9 +100,9 @@ export default function App() {
               notificationColor: "#FFC107",
               notificationIconName: "ic_launcher",
               notificationIconType: "mipmap",
-              notificationProgress: 0,
+              notificationProgress: 1,
               notificationMaxProgress: 100,
-              notificationIndeterminate: true,
+              notificationIndeterminate: false,
               params: {
                 test: "test123"
               }
