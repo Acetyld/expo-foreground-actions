@@ -49,12 +49,10 @@ export default function App() {
           try {
 
             const FunciTestFunction: ForegroundAction<FunciInterface> = async ({ test }, {
-              identifier,
               headlessTaskName
             }) => {
               console.log("[AppState.currentState]: ", AppState.currentState);
               console.log(test);
-              console.log(identifier);
               let time = Date.now();
               let duration = 0;
               while (duration < 10) {
@@ -86,7 +84,7 @@ export default function App() {
 
             await runForegroundedAction<FunciInterface>(FunciTestFunction, {
               headlessTaskName: "create_task",
-              runInJS: true,
+              runInJS: false,
               notificationTitle: "Notification Title",
               notificationDesc: "Notification Description",
               notificationColor: "#FFC107",

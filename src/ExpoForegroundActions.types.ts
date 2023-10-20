@@ -17,7 +17,6 @@ export interface ExpoForegroundOptions {
 }
 
 export interface ForegroundApi {
-  identifier: number;
   headlessTaskName: string;
 }
 export type ForegroundAction<Params> = (params: Params, api: ForegroundApi) => Promise<void>;

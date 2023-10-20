@@ -63,14 +63,14 @@ class ExpoForegroundActionsModule : Module() {
             }
         }
 
-        AsyncFunction("stopForegroundAction") { id: Int, promise: Promise ->
+        AsyncFunction("stopForegroundAction") { promise: Promise ->
             try {
                 if (currentServiceIntent != null) {
                     context.stopService(currentServiceIntent)
                     currentServiceIntent = null;
                     currentId = 0;
                 } else {
-                    println("Intent task with UUID: $id does not exist or has already been ended.")
+                    println("Intent task does not exist or has already been ended.")
 
                 }
             } catch (e: Exception) {
@@ -105,6 +105,9 @@ class ExpoForegroundActionsModule : Module() {
                 // Handle other exceptions
                 promise.reject(e.toCodedException())
             }
+        }
+        AsyncFunction("getForegroundIdentifier") { promise: Promise ->
+            promise.resolve(currentId)
         }
     }
 

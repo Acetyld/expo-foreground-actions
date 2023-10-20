@@ -8,7 +8,7 @@ import { platformApiLevel } from "expo-device";
 import {
   ExpireEventPayload,
   ExpoForegroundOptions,
-  ForegroundApi,
+  ForegroundApi
 } from "./ExpoForegroundActions.types";
 import ExpoForegroundActionsModule from "./ExpoForegroundActionsModule";
 import { AppRegistry, AppState } from "react-native";
@@ -17,9 +17,9 @@ const emitter = new EventEmitter(
   ExpoForegroundActionsModule ?? NativeModulesProxy.ExpoForegroundActions
 );
 
-let identifier: number = 0;
 let runningTasks: number = 0;
 let _isRunning = false;
+let identifier: number = 0;
 
 
 const setRunning = (val: boolean) => {
@@ -28,12 +28,19 @@ const setRunning = (val: boolean) => {
     runningTasks++;
   } else {
     _isRunning = false;
-    identifier = 0;
   }
 };
 
 export class NotForegroundedError extends Error {
-  constructor(message) {
+  constructor(message: string) {
+    super(message); // (1)
+    this.name = "NotForegroundedError"; // (2)
+  }
+}
+
+
+export class ForegroundAlreadyRunningError extends Error {
+  constructor(message: string) {
     super(message); // (1)
     this.name = "NotForegroundedError"; // (2)
   }
@@ -47,44 +54,53 @@ export async function runForegroundedAction<Params>(act: (params: Params, api: F
   if (!initialOptions) {
     throw new Error("Foreground action options cannot be null");
   }
-  if (identifier) {
-    throw new Error("Foreground action is already running");
-  }
 
   if (AppState.currentState === "background") {
     throw new NotForegroundedError("Foreground actions can only be run in the foreground");
   }
 
+  if (Platform.OS === "android" && platformApiLevel && platformApiLevel < 26) {
+    initialOptions.runInJS = true;
+  }
+
+  if (initialOptions.runInJS !== true) {
+    identifier = await ExpoForegroundActionsModule.getForegroundIdentifier();
+  }
+  if (identifier) {
+    throw new ForegroundAlreadyRunningError("Foreground action is already running, wait or stopp it first");
+  }
 
   const headlessTaskName = `${initialOptions.headlessTaskName}${runningTasks}`;
 
   const options = { ...initialOptions, headlessTaskName };
-  const action = async (identifier: number) => {
+  const action = async () => {
     if (AppState.currentState === "background") {
       throw new NotForegroundedError("Foreground actions can only be run in the foreground");
     }
     await act(initialOptions.params, {
-      identifier,
       headlessTaskName
     });
   };
 
+  setRunning(true);
   try {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
       throw new Error("Unsupported platform, currently only ios and android are supported");
     }
 
     if (options.runInJS !== true) {
-      if (Platform.OS === "android" && (!platformApiLevel || platformApiLevel >= 26)) {
-        /*On older devices we "just" run it.*/
-        setRunning(true);
+      if (Platform.OS === "android") {
+        console.log("Running on Android");
+        /*On android we wrap the headless task in a promise so we can "await" the starter*/
         await (new Promise<void>(async (resolve, reject) => {
           try {
+            /*First we register the headless task so we can run it from the Foreground service*/
             AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => {
-              await action(identifier);
+              await action();
               resolve();
             });
-            identifier = await ExpoForegroundActionsModule.startForegroundAction(options);
+            /*Then we start the actuall foreground action*/
+            await startForegroundAction(options);
           } catch (e) {
             reject(e);
             throw e;
@@ -93,21 +109,37 @@ export async function runForegroundedAction<Params>(act: (params: Params, api: F
         return;
       }
       if (Platform.OS === "ios") {
-        setRunning(true);
-        identifier = await ExpoForegroundActionsModule.startForegroundAction();
-        console.log("Started foreground action with identifier:", identifier);
-        await action(identifier);
+        console.log("Running on IOS");
+        await startForegroundAction();
+        await action();
         return;
       }
-    } else {
-      console.log("Running in JS")
-      setRunning(true);
-      await action(identifier);
+      console.log("Running on unknown platform is not supported");
+      return;
     }
+
+    identifier++;
+    console.log("Running in JS");
+    await action();
+
   } finally {
-    console.log("Finally, we have the indifier:", identifier);
-    await ExpoForegroundActionsModule.stopForegroundAction(identifier);
+    if (options.runInJS !== true) {
+      await ExpoForegroundActionsModule.stopForegroundAction();
+    } else {
+      identifier = 0;
+    }
     setRunning(false);
+  }
+}
+
+async function startForegroundAction(options?: ExpoForegroundOptions): Promise<number> {
+  if (Platform.OS === "android" && !options) {
+    throw new Error("Foreground action options cannot be null on android");
+  }
+  if (Platform.OS === "android") {
+    return ExpoForegroundActionsModule.startForegroundAction(options);
+  } else {
+    return ExpoForegroundActionsModule.startForegroundAction();
   }
 }
 
@@ -116,13 +148,17 @@ export async function updateForegroundedAction(options: ExpoForegroundOptions) {
   return ExpoForegroundActionsModule.updateForegroundedAction(options);
 }
 
-export async function forceStopForegroundedAction() {
-  await ExpoForegroundActionsModule.stopForegroundAction(identifier);
+export async function stopForegroundAction() {
+  await ExpoForegroundActionsModule.stopForegroundAction();
+  setRunning(false);
 }
 
-export const getCurrentIosIdentifier = () => identifier;
-
+// noinspection JSUnusedGlobalSymbols
+export const getForegroundIdentifier = async (): Promise<number> => ExpoForegroundActionsModule.getForegroundIdentifier();
+// noinspection JSUnusedGlobalSymbols
 export const isRunning = () => _isRunning;
+// noinspection JSUnusedGlobalSymbols
+export const getRunningTasks = () => runningTasks;
 
 
 export async function getBackgroundTimeRemaining(): Promise<number> {
