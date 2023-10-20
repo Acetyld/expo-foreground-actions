@@ -1,6 +1,6 @@
 {
   "name": "expo-foreground-actions",
-  "version": "0.2.91",
+  "version": "0.3.0",
   "description": "My new module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
