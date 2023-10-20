@@ -119,8 +119,13 @@ const runJS = async (action: () => Promise<void>, options: ExpoForegroundOptions
 const runIos = async (action: () => Promise<void>, options: ExpoForegroundOptions) => {
   console.log("Running on IOS");
   await startForegroundAction();
-  await action();
-  await stopForegroundAction();
+  try{
+    await action();
+  } catch (e){
+    throw e;
+  } finally {
+    await stopForegroundAction();
+  }
 };
 
 const runAndroid = async (action: () => Promise<void>, options: ExpoForegroundOptions) => new Promise<void>(async (resolve, reject) => {
@@ -129,9 +134,15 @@ const runAndroid = async (action: () => Promise<void>, options: ExpoForegroundOp
     /*First we register the headless task so we can run it from the Foreground service*/
     AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => {
       /*Then we start the actuall foreground action, we all do this in the headless task, without touching UI, we can still update UI be using something like Realm for example*/
-      await action();
-      await stopForegroundAction();
-      resolve();
+      try {
+        await action();
+        await stopForegroundAction();
+        resolve();
+      } catch (e) {
+        /*We do this to make sure its ALWAYS stopped*/
+        await stopForegroundAction();
+        throw e;
+      }
     });
     await startForegroundAction(options);
 
