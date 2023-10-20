@@ -17,19 +17,9 @@ const emitter = new EventEmitter(
   ExpoForegroundActionsModule ?? NativeModulesProxy.ExpoForegroundActions
 );
 
-let runningTasks: number = 0;
-let _isRunning = false;
+let ranTaskCount: number = 0;
 let identifier: number = 0;
 
-
-const setRunning = (val: boolean) => {
-  if (val) {
-    _isRunning = true;
-    runningTasks++;
-  } else {
-    _isRunning = false;
-  }
-};
 
 export class NotForegroundedError extends Error {
   constructor(message: string) {
@@ -81,7 +71,7 @@ export const runForegroundedAction = async <Params>(act: (params: Params, api: F
     throw new ForegroundAlreadyRunningError("Foreground action is already running, wait or stopp it first");
   }
 
-  const headlessTaskName = `${initialOptions.headlessTaskName}${runningTasks}`;
+  const headlessTaskName = `${initialOptions.headlessTaskName}${ranTaskCount}`;
 
   const options = { ...initialOptions, headlessTaskName };
   const action = async () => {
@@ -93,55 +83,63 @@ export const runForegroundedAction = async <Params>(act: (params: Params, api: F
     });
   };
 
-  setRunning(true);
   try {
     if (Platform.OS !== "ios" && Platform.OS !== "android") {
       throw new Error("Unsupported platform, currently only ios and android are supported");
     }
+    ranTaskCount++;
 
-    if (options.runInJS !== true) {
-      if (Platform.OS === "android") {
-        console.log("Running on Android");
-        /*On android we wrap the headless task in a promise so we can "await" the starter*/
-        await (new Promise<void>(async (resolve, reject) => {
-          try {
-            /*First we register the headless task so we can run it from the Foreground service*/
-            AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => {
-              await action();
-              resolve();
-            });
-            /*Then we start the actuall foreground action*/
-            await startForegroundAction(options);
-          } catch (e) {
-            reject(e);
-            throw e;
-          }
-        }));
-        return;
-      }
-      if (Platform.OS === "ios") {
-        console.log("Running on IOS");
-        await startForegroundAction();
-        await action();
-        return;
-      }
-      console.log("Running on unknown platform is not supported");
+    if (options.runInJS === true) {
+      await runJS(action, options);
       return;
     }
-
-    identifier++;
-    console.log("Running in JS");
-    await action();
-
-  } finally {
-    if (options.runInJS !== true) {
-      await ExpoForegroundActionsModule.stopForegroundAction(false);
-    } else {
-      identifier = 0;
+    if (Platform.OS === "android") {
+      /*On android we wrap the headless task in a promise so we can "await" the starter*/
+      await runAndroid(action, options);
+      return;
     }
-    setRunning(false);
+    if (Platform.OS === "ios") {
+      await runIos(action, options);
+      return;
+    }
+    console.log("Running on unknown platform is not supported");
+    return;
+  } catch (e) {
+    throw e;
   }
 };
+
+
+const runJS = async (action: () => Promise<void>, options: ExpoForegroundOptions) => {
+  console.log("Running on JS");
+  await action();
+  identifier = 0;
+};
+
+const runIos = async (action: () => Promise<void>, options: ExpoForegroundOptions) => {
+  console.log("Running on IOS");
+  await startForegroundAction();
+  await action();
+  await stopForegroundAction();
+};
+
+const runAndroid = async (action: () => Promise<void>, options: ExpoForegroundOptions) => new Promise<void>(async (resolve, reject) => {
+  console.log("Running on Android");
+  try {
+    /*First we register the headless task so we can run it from the Foreground service*/
+    AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async () => {
+      /*Then we start the actuall foreground action, we all do this in the headless task, without touching UI, we can still update UI be using something like Realm for example*/
+      await action();
+      await stopForegroundAction();
+      resolve();
+    });
+    await startForegroundAction(options);
+
+  } catch (e) {
+    reject(e);
+    throw e;
+  }
+});
 
 export const updateForegroundedAction = async (options: ExpoForegroundOptions) => {
   if (Platform.OS !== "android") return;
@@ -151,22 +149,19 @@ export const updateForegroundedAction = async (options: ExpoForegroundOptions) =
 // noinspection JSUnusedGlobalSymbols
 export const stopForegroundAction = async (): Promise<void> => {
   await ExpoForegroundActionsModule.stopForegroundAction(false);
-  setRunning(false);
 };
 
 // noinspection JSUnusedGlobalSymbols
 
 export const forceStopForegroundAction = async (): Promise<void> => {
   await ExpoForegroundActionsModule.stopForegroundAction(true);
-  setRunning(false);
 };
 
 // noinspection JSUnusedGlobalSymbols
 export const getForegroundIdentifier = async (): Promise<number> => ExpoForegroundActionsModule.getForegroundIdentifier();
 // noinspection JSUnusedGlobalSymbols
-export const isRunning = () => _isRunning;
 // noinspection JSUnusedGlobalSymbols
-export const getRunningTasks = () => runningTasks;
+export const getRanTaskCount = () => ranTaskCount;
 
 
 export const getBackgroundTimeRemaining = async (): Promise<number> => {

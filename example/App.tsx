@@ -1,6 +1,6 @@
 import {
   addExpirationListener,
-  getBackgroundTimeRemaining, runForegroundedAction, updateForegroundedAction
+  getBackgroundTimeRemaining, getForegroundIdentifier, runForegroundedAction, updateForegroundedAction
 } from "expo-foreground-actions";
 import { useEffect, useRef } from "react";
 import {
@@ -13,6 +13,38 @@ import {
 } from "react-native";
 import { ForegroundAction } from "expo-foreground-actions/ExpoForegroundActions.types";
 
+const FunciTestFunction: ForegroundAction<FunciInterface> = async ({ test }, {
+  headlessTaskName
+}) => {
+  console.log("[AppState.currentState]: ", AppState.currentState);
+  console.log(test);
+  let time = Date.now();
+  let duration = 0;
+  while (duration < 10) {
+    console.log("Logging every 1 second... from foreground!", time);
+    await wait(1000); // Wait for 1 second
+    duration += 1;
+    await updateForegroundedAction({
+      headlessTaskName: headlessTaskName,
+      notificationTitle: "Notification Title",
+      notificationDesc: "Notification Description",
+      notificationColor: "#FFC107",
+      notificationIconName: "ic_launcher",
+      notificationIconType: "mipmap",
+      notificationProgress: duration * 10,
+      notificationMaxProgress: 100,
+      notificationIndeterminate: false
+    });
+
+    if (Platform.OS === "ios") {
+      await getBackgroundTimeRemaining().then((r) => {
+        console.log("Remaining time:", r);
+      });
+    }
+  }
+  console.log("Logging interval ended.");
+};
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -23,6 +55,8 @@ interface FunciInterface {
 
 
 export default function App() {
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const lastEventId = useRef<null | number>(null);
   useEffect(() => {
     const sub = addExpirationListener((event) => {
@@ -36,49 +70,25 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    setInterval(() => {
+    intervalRef.current = setInterval(() => {
       console.log("Logging every 1 second, so we can see when the app gets \"paused\"");
     }, 1000);
+
+    return () => {
+      intervalRef.current && clearInterval(intervalRef.current);
+    }
   }, []);
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#333333" />
+      <Button title={'get identif'} onPress={()=>{
+        getForegroundIdentifier().then(r=>console.log(r));
+      }}/>
       <Button
         title="startForegroundAction"
         onPress={async () => {
           try {
 
-            const FunciTestFunction: ForegroundAction<FunciInterface> = async ({ test }, {
-              headlessTaskName
-            }) => {
-              console.log("[AppState.currentState]: ", AppState.currentState);
-              console.log(test);
-              let time = Date.now();
-              let duration = 0;
-              while (duration < 10) {
-                console.log("Logging every 1 second... from foreground!", time);
-                await wait(1000); // Wait for 1 second
-                duration += 1;
-                await updateForegroundedAction({
-                  headlessTaskName: headlessTaskName,
-                  notificationTitle: "Notification Title",
-                  notificationDesc: "Notification Description",
-                  notificationColor: "#FFC107",
-                  notificationIconName: "ic_launcher",
-                  notificationIconType: "mipmap",
-                  notificationProgress: duration * 10,
-                  notificationMaxProgress: 100,
-                  notificationIndeterminate: false
-                });
-
-                if (Platform.OS === "ios") {
-                  await getBackgroundTimeRemaining().then((r) => {
-                    console.log("Remaining time:", r);
-                  });
-                }
-              }
-              console.log("Logging interval ended.");
-            };
 
             console.log("BEFORE runForegroundedAction");
 

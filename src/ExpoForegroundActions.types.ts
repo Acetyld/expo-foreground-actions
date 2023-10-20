@@ -14,6 +14,7 @@ export interface ExpoForegroundOptions {
   notificationMaxProgress: number;
   notificationIndeterminate: boolean;
   runInJS?: boolean;
+  onStart?: (identifier:number) => void;
 }
 
 export interface ForegroundApi {
