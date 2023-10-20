@@ -30,12 +30,15 @@ public class ExpoForegroundActionsModule: Module {
             
             promise.resolve(self.identifier.rawValue)
         }
-        AsyncFunction("stopForegroundAction") { (promise: Promise) in
+        AsyncFunction("stopForegroundAction") { (force:Bool, promise: Promise) in
             if self.identifier != UIBackgroundTaskIdentifier.invalid {
                 UIApplication.shared.endBackgroundTask(self.identifier)
                 self.identifier = UIBackgroundTaskIdentifier.invalid;
             } else {
                 print("Background task with identifier \(self.identifier) does not exist or has already been ended.")
+            }
+            if(force){
+                self.identifier = UIBackgroundTaskIdentifier.invalid;
             }
             promise.resolve()
         }

@@ -135,7 +135,7 @@ export const runForegroundedAction = async <Params>(act: (params: Params, api: F
 
   } finally {
     if (options.runInJS !== true) {
-      await ExpoForegroundActionsModule.stopForegroundAction();
+      await ExpoForegroundActionsModule.stopForegroundAction(false);
     } else {
       identifier = 0;
     }
@@ -149,9 +149,15 @@ export const updateForegroundedAction = async (options: ExpoForegroundOptions) =
 };
 
 // noinspection JSUnusedGlobalSymbols
-
 export const stopForegroundAction = async (): Promise<void> => {
-  await ExpoForegroundActionsModule.stopForegroundAction();
+  await ExpoForegroundActionsModule.stopForegroundAction(false);
+  setRunning(false);
+};
+
+// noinspection JSUnusedGlobalSymbols
+
+export const forceStopForegroundAction = async (): Promise<void> => {
+  await ExpoForegroundActionsModule.stopForegroundAction(true);
   setRunning(false);
 };
 
