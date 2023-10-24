@@ -1,6 +1,6 @@
 {
   "name": "expo-foreground-actions",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "My new module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -30,7 +30,6 @@
   "author": "Dion <dion@vitrion.nl> ()",
   "license": "MIT",
   "homepage": "https://github.com/Acetyld/expo-foreground-actions#readme",
-  "dependencies": {},
   "devDependencies": {
     "@types/react": "^18.0.25",
     "@types/react-native": "^0.61.17",
