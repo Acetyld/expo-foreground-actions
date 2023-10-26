@@ -150,6 +150,7 @@ For now there is not dedicated documentation, i showed off the current methods i
 
 - See [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) folder on how to use this package.
 
+![Example](assets/App_tsx.png)
 ### 🤖 Functions
 
 #### `runForegroundedAction`

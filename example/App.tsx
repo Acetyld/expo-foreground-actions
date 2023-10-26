@@ -24,10 +24,16 @@ function onUrl(evt: any) {
   console.log(evt.url);
 }
 
-const FunciTestFunction = async ({
-                                   headlessTaskName,
-                                   identifier
-                                 }: ForegroundApi) => {
+/*Quick await*/
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+const MyHelperFunction = async ({
+                                  headlessTaskName,
+                                  identifier
+                                }: ForegroundApi) => {
   let time = Date.now();
   let duration = 0;
   while (duration < 50) {
@@ -56,10 +62,6 @@ const FunciTestFunction = async ({
   console.log("Logging interval ended.");
 };
 
-/*Quick await*/
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export default function App() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -100,7 +102,7 @@ export default function App() {
             console.log("BEFORE runForegroundedAction");
             await runForegroundedAction(async (api) => {
               /*I added a helper function but you can do all logic in here*/
-              await FunciTestFunction(api);
+              await MyHelperFunction(api);
             }, {
               headlessTaskName: "create_task",
               notificationTitle: "Notification Title",
