@@ -2,8 +2,8 @@
 <h1 align="center">
 <img src="https://github.com/Acetyld/expo-foreground-actions/blob/main/assets/logo.png" width="100" />
 <br>EXPO-FOREGROUND-ACTIONS</h1>
-<h3>◦ Running Foreground actions for Android/IOS</h3>
-<h3>◦ Developed with the software and tools below.</h3>
+<div style="font-style: italic">Running Foreground actions for Android/IOS</div>
+<div style="opacity: 0.5;margin-top:10px;">Developed with the software and tools below.</div>
 
 <p align="center">
 <img src="https://img.shields.io/badge/JavaScript-F7DF1E.svg?style=flat-square&logo=JavaScript&logoColor=black" alt="JavaScript" />
