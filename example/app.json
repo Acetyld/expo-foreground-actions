@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "myapp",
     "plugins": [
       [
         "./plugins/expo-foreground-actions"

@@ -1,6 +1,10 @@
 import {
-  addExpirationListener,
-  getBackgroundTimeRemaining, getForegroundIdentifier, runForegroundedAction, updateForegroundedAction
+  addExpirationListener, forceStopAllForegroundActions,
+  getBackgroundTimeRemaining,
+  getForegroundIdentifiers,
+  runForegroundedAction,
+  stopForegroundAction,
+  updateForegroundedAction
 } from "expo-foreground-actions";
 import { useEffect, useRef } from "react";
 import {
@@ -11,30 +15,29 @@ import {
   StyleSheet,
   View
 } from "react-native";
-import { ForegroundAction } from "expo-foreground-actions/ExpoForegroundActions.types";
+import { ForegroundAction, ForegroundApi } from "expo-foreground-actions/ExpoForegroundActions.types";
 
-const FunciTestFunction: ForegroundAction<FunciInterface> = async ({ test }, {
-  headlessTaskName
-}) => {
-  console.log("[AppState.currentState]: ", AppState.currentState);
-  console.log(test);
+const FunciTestFunction = async ({
+                                   headlessTaskName,
+                                   identifier
+                                 }: ForegroundApi) => {
   let time = Date.now();
   let duration = 0;
   while (duration < 10) {
     console.log("Logging every 1 second... from foreground!", time);
     await wait(1000); // Wait for 1 second
     duration += 1;
-    await updateForegroundedAction({
-      headlessTaskName: headlessTaskName,
-      notificationTitle: "Notification Title",
-      notificationDesc: "Notification Description",
-      notificationColor: "#FFC107",
-      notificationIconName: "ic_launcher",
-      notificationIconType: "mipmap",
-      notificationProgress: duration * 10,
-      notificationMaxProgress: 100,
-      notificationIndeterminate: false
-    });
+    // await updateForegroundedAction(identifier, {
+    //   headlessTaskName: headlessTaskName,
+    //   notificationTitle: "Notification Title",
+    //   notificationDesc: "Notification Description",
+    //   notificationColor: "#FFC107",
+    //   notificationIconName: "ic_launcher",
+    //   notificationIconType: "mipmap",
+    //   notificationProgress: duration * 10,
+    //   notificationMaxProgress: 100,
+    //   notificationIndeterminate: false
+    // });
 
     if (Platform.OS === "ios") {
       await getBackgroundTimeRemaining().then((r) => {
@@ -56,8 +59,7 @@ interface FunciInterface {
 
 export default function App() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const lastEventId = useRef<null | number>(null);
+  const currentRunningId = useRef<null | number>(null);
   useEffect(() => {
     const sub = addExpirationListener((event) => {
       console.log(event.remaining);
@@ -76,14 +78,14 @@ export default function App() {
 
     return () => {
       intervalRef.current && clearInterval(intervalRef.current);
-    }
+    };
   }, []);
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#333333" />
-      <Button title={'get identif'} onPress={()=>{
-        getForegroundIdentifier().then(r=>console.log(r));
-      }}/>
+      <Button title={"Get identifiers"} onPress={() => {
+        getForegroundIdentifiers().then(r => console.log(r));
+      }} />
       <Button
         title="startForegroundAction"
         onPress={async () => {
@@ -92,9 +94,10 @@ export default function App() {
 
             console.log("BEFORE runForegroundedAction");
 
-            await runForegroundedAction<FunciInterface>(FunciTestFunction, {
+            await runForegroundedAction(async (api) => {
+              await FunciTestFunction(api);
+            }, {
               headlessTaskName: "create_task",
-              runInJS: false,
               notificationTitle: "Notification Title",
               notificationDesc: "Notification Description",
               notificationColor: "#FFC107",
@@ -103,8 +106,13 @@ export default function App() {
               notificationProgress: 1,
               notificationMaxProgress: 100,
               notificationIndeterminate: false,
-              params: {
-                test: "test123"
+              linkingURI: "myapp://"
+            }, {
+              events: {
+                onIdentifier: (id) => {
+                  if (!currentRunningId.current) currentRunningId.current = id;
+                  console.log("Identifier:", id);
+                }
               }
             });
 
@@ -115,6 +123,19 @@ export default function App() {
           }
         }}
       />
+      <Button title={"stopForegroundAction"} onPress={async () => {
+        if (currentRunningId.current) {
+          console.log("Stopping foreground action with id:", currentRunningId.current);
+          await stopForegroundAction(currentRunningId.current);
+          currentRunningId.current = null;
+          console.log("Stopped foreground action");
+        } else {
+          console.log("No running foreground action");
+        }
+      }} />
+      <Button title={"forceStopAllForegroundActions"} onPress={async () => {
+        await forceStopAllForegroundActions();
+      }} />
     </View>
   );
 }

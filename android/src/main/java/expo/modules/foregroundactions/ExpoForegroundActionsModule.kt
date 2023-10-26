@@ -17,8 +17,8 @@ import expo.modules.kotlin.modules.ModuleDefinition
 const val ON_EXPIRATION_EVENT = "onExpirationEvent"
 
 class ExpoForegroundActionsModule : Module() {
-    private var currentServiceIntent: Intent? = null
-    private var currentId: Int = 0
+    private val intentMap: MutableMap<Int, Intent> = mutableMapOf()
+    private var currentReferenceId: Int = 0
 
 
     // Each module class must implement the definition function. The definition consists of components
@@ -36,32 +36,28 @@ class ExpoForegroundActionsModule : Module() {
 
         AsyncFunction("startForegroundAction") { options: ExpoForegroundOptions, promise: Promise ->
             try {
-                if (currentServiceIntent != null) {
-                    promise.reject(CodedException("There is still a unstopped service running"))
-                } else {                // Stop any other intent
-                    // Create the service
-                    val intent = Intent(context, ExpoForegroundActionsService::class.java)
-                    intent.putExtra("headlessTaskName", options.headlessTaskName)
-                    intent.putExtra("notificationTitle", options.notificationTitle)
-                    intent.putExtra("notificationDesc", options.notificationDesc)
-                    intent.putExtra("notificationColor", options.notificationColor)
-                    val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
-                    intent.putExtra("notificationIconInt", notificationIconInt)
-                    intent.putExtra("notificationProgress", options.notificationProgress)
-                    intent.putExtra("notificationMaxProgress", options.notificationMaxProgress)
-                    intent.putExtra("notificationIndeterminate", options.notificationIndeterminate)
+                val intent = Intent(context, ExpoForegroundActionsService::class.java)
+                intent.putExtra("headlessTaskName", options.headlessTaskName)
+                intent.putExtra("notificationTitle", options.notificationTitle)
+                intent.putExtra("notificationDesc", options.notificationDesc)
+                intent.putExtra("notificationColor", options.notificationColor)
+                val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
+                intent.putExtra("notificationIconInt", notificationIconInt)
+                intent.putExtra("notificationProgress", options.notificationProgress)
+                intent.putExtra("notificationMaxProgress", options.notificationMaxProgress)
+                intent.putExtra("notificationIndeterminate", options.notificationIndeterminate)
+                intent.putExtra("linkingURI", options.linkingURI)
+                currentReferenceId++
 
-
-                    /*Save as reference so we can stop it next time*/
-                    currentServiceIntent = intent;
-                    currentId = currentId.plus(1);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context.startForegroundService(currentServiceIntent)
-                    } else {
-                        context.startService(currentServiceIntent)
-                    }
-                    promise.resolve(currentId)
+                intentMap[currentReferenceId] = intent
+                intent.putExtra("notificationId", currentReferenceId)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
                 }
+                promise.resolve(currentReferenceId)
+
             } catch (e: Exception) {
                 println(e.message);
 
@@ -70,29 +66,27 @@ class ExpoForegroundActionsModule : Module() {
             }
         }
 
-        AsyncFunction("stopForegroundAction") { force: Boolean, promise: Promise ->
+        AsyncFunction("stopForegroundAction") { identifier: Int, promise: Promise ->
             try {
-                if (currentServiceIntent != null) {
-                    context.stopService(currentServiceIntent)
-                    currentServiceIntent = null;
-                    currentId = 0;
+                println(identifier);
+                println(intentMap);
+                val intent = intentMap[identifier]
+                if (intent !== null) {
+                    context.stopService(intent)
+                    intentMap.remove(identifier)
                 } else {
-                    println("Intent task does not exist or has already been ended.")
+                    println("Background task with identifier $identifier does not exist or has already been ended");
+
                 }
             } catch (e: Exception) {
                 println(e.message);
-                currentServiceIntent = null;
-                currentId = 0;
                 // Handle other exceptions
                 promise.reject(e.toCodedException())
-            }
-            if (force) {
-                currentId = 0;
             }
             promise.resolve(null)
         }
 
-        AsyncFunction("updateForegroundedAction") { options: ExpoForegroundOptions, promise: Promise ->
+        AsyncFunction("updateForegroundedAction") { identifier: Int, options: ExpoForegroundOptions, promise: Promise ->
             try {
                 val notificationIconInt: Int = context.resources.getIdentifier(options.notificationIconName, options.notificationIconType, context.packageName)
                 val notification: Notification = ExpoForegroundActionsService.buildNotification(
@@ -103,20 +97,39 @@ class ExpoForegroundActionsModule : Module() {
                         notificationIconInt,
                         options.notificationProgress,
                         options.notificationMaxProgress,
-                        options.notificationIndeterminate
+                        options.notificationIndeterminate,
+                        options.linkingURI,
                 );
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(ExpoForegroundActionsService.SERVICE_NOTIFICATION_ID, notification)
+                notificationManager.notify(identifier, notification)
                 promise.resolve(null)
             } catch (e: Exception) {
                 println(e.message);
-                currentServiceIntent = null;
                 // Handle other exceptions
                 promise.reject(e.toCodedException())
             }
         }
-        AsyncFunction("getForegroundIdentifier") { promise: Promise ->
-            promise.resolve(currentId)
+
+        AsyncFunction("forceStopAllForegroundActions") { promise: Promise ->
+            try {
+                if (intentMap.isEmpty()) {
+                    println("No intents to stop.")
+                } else {
+                    for ((_, intent) in intentMap) {
+                        context.stopService(intent)
+                    }
+                    intentMap.clear()
+                }
+                promise.resolve(null)
+            } catch (e: Exception) {
+                println(e.message)
+                // Handle other exceptions
+                promise.reject(e.toCodedException())
+            }
+        }
+        AsyncFunction("getForegroundIdentifiers") { promise: Promise ->
+            val identifiers = intentMap.keys.toTypedArray()
+            promise.resolve(identifiers)
         }
     }
 

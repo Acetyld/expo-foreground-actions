@@ -2,7 +2,8 @@ import ExpoModulesCore
 let ON_EXPIRATION_EVENT = "onExpirationEvent"
 
 public class ExpoForegroundActionsModule: Module {
-    var identifier: UIBackgroundTaskIdentifier = UIBackgroundTaskIdentifier.invalid
+    var backgroundTaskIdentifiers: [UIBackgroundTaskIdentifier] = []
+    
     // Each module class must implement the definition function. The definition consists of components
     // that describes the module's functionality and behavior.
     // See https://docs.expo.dev/modules/module-api for more details about available components.
@@ -15,38 +16,53 @@ public class ExpoForegroundActionsModule: Module {
         Name("ExpoForegroundActions")
         
         AsyncFunction("startForegroundAction") { (promise: Promise) in
-    
-            if(self.identifier != UIBackgroundTaskIdentifier.invalid){
-                promise.reject("ALREADY_RUNNING","There is still a unstopped service running")
-            } else {
-                self.identifier = UIApplication.shared.beginBackgroundTask {
-                    // Expiration block, perform cleanup including endBackgroundTask
-                    self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining);
-                    UIApplication.shared.endBackgroundTask(self.identifier)
-                }
-                promise.resolve(self.identifier.rawValue)
+            
+            var backgroundTaskIdentifier: UIBackgroundTaskIdentifier = .invalid
+            
+            backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask {
+                // Expiration block, perform cleanup including endBackgroundTask
+                self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining);
+                UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
             }
+            backgroundTaskIdentifiers.append(backgroundTaskIdentifier)
+            print(backgroundTaskIdentifier.rawValue);
+            promise.resolve(backgroundTaskIdentifier.rawValue)
+            
         }
-        AsyncFunction("stopForegroundAction") { (force:Bool, promise: Promise) in
-            if self.identifier != UIBackgroundTaskIdentifier.invalid {
-                UIApplication.shared.endBackgroundTask(self.identifier)
-                self.identifier = UIBackgroundTaskIdentifier.invalid;
-                print("Background task with identifier \(self.identifier) has been ended")
-            } else {
-                print("Background task with identifier \(self.identifier) does not exist or has already been ended")
+        AsyncFunction("stopForegroundAction") { (taskIdentifier: Int, promise: Promise) in
+            let backgroundTaskID = UIBackgroundTaskIdentifier.init(rawValue: taskIdentifier);
+            
+            if backgroundTaskID == .invalid {
+                print("Background task with identifier \(taskIdentifier) does not exist or has already been ended")
+                promise.resolve()
+                return
             }
-            if(force){
-                self.identifier = UIBackgroundTaskIdentifier.invalid;
+            
+            if let index = backgroundTaskIdentifiers.firstIndex(where: {$0.rawValue == taskIdentifier}) {
+                backgroundTaskIdentifiers.remove(at: index)
             }
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            
             promise.resolve()
         }
+        
+        AsyncFunction("forceStopAllForegroundActions") { (promise: Promise) in
+              for identifier in backgroundTaskIdentifiers {
+                  print("Stopping identifier:",identifier.rawValue)
+                  UIApplication.shared.endBackgroundTask(identifier)
+              }
+              backgroundTaskIdentifiers.removeAll()
+              promise.resolve()
+          }
+          
         
         AsyncFunction("getBackgroundTimeRemaining") { (promise: Promise) in
             promise.resolve(UIApplication.shared.backgroundTimeRemaining)
         }
         
-        AsyncFunction("getForegroundIdentifier") { (promise: Promise) in
-            promise.resolve(self.identifier.rawValue)
+        AsyncFunction("getForegroundIdentifiers") { (promise: Promise) in
+            let identifierValues = backgroundTaskIdentifiers.map { $0.rawValue }
+            promise.resolve(identifierValues)
         }
         
     }

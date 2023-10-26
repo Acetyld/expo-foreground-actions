@@ -30,4 +30,7 @@ class ExpoForegroundOptions : Record {
 
     @Field
     val notificationIndeterminate: Boolean = false
+
+    @Field
+    val linkingURI: String = ""
 }

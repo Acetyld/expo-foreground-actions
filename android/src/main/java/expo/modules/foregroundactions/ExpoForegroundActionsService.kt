@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -18,7 +19,6 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class ExpoForegroundActionsService : HeadlessJsTaskService() {
     companion object {
-        const val SERVICE_NOTIFICATION_ID = 91242168
         private const val CHANNEL_ID = "ExpoForegroundActionChannel"
         fun buildNotification(
                 context: Context,
@@ -28,15 +28,15 @@ class ExpoForegroundActionsService : HeadlessJsTaskService() {
                 notificationIconInt: Int,
                 notificationProgress: Int,
                 notificationMaxProgress: Int,
-                notificationIndeterminate: Boolean
+                notificationIndeterminate: Boolean,
+                linkingURI: String
         ): Notification {
-            val notificationIntent: Intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-//        val contentIntent: PendingIntent = when {
-//            Build.VERSION.SDK_INT >= Build.VERSION_CODES.X -> PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_MUTABLE)
-//            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_MUTABLE)
-//            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-//            else -> PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-//        }
+
+            val notificationIntent: Intent = if (linkingURI.isEmpty()) {
+                Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI))
+            } else {
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            }
             val contentIntent: PendingIntent = PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                     .setContentTitle(notificationTitle)
@@ -65,6 +65,8 @@ class ExpoForegroundActionsService : HeadlessJsTaskService() {
         val notificationProgress: Int = extras.getInt("notificationProgress");
         val notificationMaxProgress: Int = extras.getInt("notificationMaxProgress");
         val notificationIndeterminate: Boolean = extras.getBoolean("notificationIndeterminate");
+        val notificationId: Int = extras.getInt("notificationId");
+        val linkingURI: String = extras.getString("linkingURI")!!;
 
 
         println("notificationIconInt");
@@ -83,11 +85,12 @@ class ExpoForegroundActionsService : HeadlessJsTaskService() {
                 notificationIconInt,
                 notificationProgress,
                 notificationMaxProgress,
-                notificationIndeterminate
+                notificationIndeterminate,
+                linkingURI
         )
         println("Starting foreground")
 
-        startForeground(SERVICE_NOTIFICATION_ID, notification)
+        startForeground(notificationId, notification)
         println("After foreground")
         return super.onStartCommand(intent, flags, startId)
     }
