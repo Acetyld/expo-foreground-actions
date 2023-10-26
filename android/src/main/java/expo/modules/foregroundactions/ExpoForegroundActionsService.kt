@@ -32,7 +32,7 @@ class ExpoForegroundActionsService : HeadlessJsTaskService() {
                 linkingURI: String
         ): Notification {
 
-            val notificationIntent: Intent = if (linkingURI.isEmpty()) {
+            val notificationIntent: Intent = if (linkingURI.isNotEmpty()) {
                 Intent(Intent.ACTION_VIEW, Uri.parse(linkingURI))
             } else {
                 Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)

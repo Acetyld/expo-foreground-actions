@@ -16,7 +16,15 @@ import {
   View
 } from "react-native";
 import { ForegroundAction, ForegroundApi } from "expo-foreground-actions/ExpoForegroundActions.types";
+import { Linking } from 'react-native';
 
+Linking.addEventListener('url', handleOpenURL);
+
+function handleOpenURL(evt:any) {
+  // Will be called when the notification is pressed
+  console.log(evt.url);
+  // do something
+}
 const FunciTestFunction = async ({
                                    headlessTaskName,
                                    identifier
