@@ -124,7 +124,7 @@ Please ensure you have the following dependencies installed on your system:
     yarn add expo-foreground-actions
     ```
 
-2. Install the plugin, for now download the repo and copy the plugins folder to your project root.
+2. Install the plugin, for now download the repo and copy the [plugins](https://github.com/Acetyld/expo-foreground-actions/tree/main/plugins) folder to your project root.
 3. Then update your app.json to include the plugin and a scheme if u wanna use the plugin with a deeplink. <br/>https://docs.expo.dev/guides/linking/
     ```sh
    "expo": {
