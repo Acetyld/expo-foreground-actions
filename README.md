@@ -1,6 +1,6 @@
 <div align="center">
 <h1 align="center">
-<img src="https://github.com/Acetyld/expo-foreground-actions/tree/main/assets/logo.png" width="100" />
+<img src="https://github.com/Acetyld/expo-foreground-actions/blob/main/assets/logo.png" width="100" />
 <br>EXPO-FOREGROUND-ACTIONS</h1>
 <h3>◦ Running Foreground actions for Android/IOS</h3>
 <h3>◦ Developed with the software and tools below.</h3>
@@ -28,8 +28,8 @@
 - [📦 Features](#-features)
 - [📂 repository Structure](#-repository-structure)
 - [🚀 Getting Started](#-getting-started)
-    - [🔧 Installation](#-installation)
-    - [🤖 How to use](#-running-expo-foreground-actions)
+   - [🔧 Installation](#-installation)
+   - [🤖 How to use](#-running-expo-foreground-actions)
 - [🛣 Roadmap](#-roadmap)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
@@ -63,7 +63,7 @@ But... remember doing a location tracking in background is not the goal of this 
 **Ios**
 - Be notified when the background time you get is almost over so you can save your data and stop the task.
 
-**Web** 
+**Web**
 - Not fully supported, we suggest using runInJS for this because a error would be thrown if you try to run a foreground action on web.
 ---
 
@@ -113,13 +113,13 @@ Please ensure you have the following dependencies installed on your system:
 ### 🔧 Installation
 
 1. Clone the expo-foreground-actions repository:
-    
-    **NPM**
+
+   **NPM**
     ```sh
     npm install expo-foreground-actions
     ```
-    
-    **Yarn**
+
+   **Yarn**
     ```sh
     yarn add expo-foreground-actions
     ```

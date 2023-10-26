@@ -1,6 +1,6 @@
 <div align="center">
 <h1 align="center">
-<img src="https://github.com/Acetyld/expo-foreground-actions/tree/main/assets/logo.png" width="100" />
+<img src="https://github.com/Acetyld/expo-foreground-actions/blob/main/assets/logo.png" width="100" />
 <br>EXPO-FOREGROUND-ACTIONS</h1>
 <h3>◦ Running Foreground actions for Android/IOS</h3>
 <h3>◦ Developed with the software and tools below.</h3>
