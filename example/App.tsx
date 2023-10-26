@@ -8,23 +8,22 @@ import {
 } from "expo-foreground-actions";
 import { useEffect, useRef } from "react";
 import {
-  AppState,
   Button,
   Platform,
   StatusBar,
   StyleSheet,
   View
 } from "react-native";
-import { ForegroundAction, ForegroundApi } from "expo-foreground-actions/ExpoForegroundActions.types";
-import { Linking } from 'react-native';
+import { ForegroundApi } from "expo-foreground-actions/ExpoForegroundActions.types";
+import { Linking } from "react-native";
 
-Linking.addEventListener('url', handleOpenURL);
+Linking.addEventListener("url", onUrl);
 
-function handleOpenURL(evt:any) {
-  // Will be called when the notification is pressed
+function onUrl(evt: any) {
+  /*Here we check the deeplink URL*/
   console.log(evt.url);
-  // do something
 }
+
 const FunciTestFunction = async ({
                                    headlessTaskName,
                                    identifier
@@ -35,17 +34,18 @@ const FunciTestFunction = async ({
     console.log("Logging every 1 second... from foreground!", time);
     await wait(1000); // Wait for 1 second
     duration += 1;
-    // await updateForegroundedAction(identifier, {
-    //   headlessTaskName: headlessTaskName,
-    //   notificationTitle: "Notification Title",
-    //   notificationDesc: "Notification Description",
-    //   notificationColor: "#FFC107",
-    //   notificationIconName: "ic_launcher",
-    //   notificationIconType: "mipmap",
-    //   notificationProgress: duration * 10,
-    //   notificationMaxProgress: 100,
-    //   notificationIndeterminate: false
-    // });
+    await updateForegroundedAction(identifier, {
+      headlessTaskName: headlessTaskName,
+      notificationTitle: "Notification Title",
+      notificationDesc: "Notification Description",
+      notificationColor: "#FFC107",
+      notificationIconName: "ic_launcher",
+      notificationIconType: "mipmap",
+      notificationProgress: duration * 10,
+      notificationMaxProgress: 100,
+      notificationIndeterminate: false,
+      linkingURI: "myapp://"
+    });
 
     if (Platform.OS === "ios") {
       await getBackgroundTimeRemaining().then((r) => {
@@ -56,19 +56,16 @@ const FunciTestFunction = async ({
   console.log("Logging interval ended.");
 };
 
+/*Quick await*/
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-interface FunciInterface {
-  test: string;
-}
-
 
 export default function App() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const currentRunningId = useRef<null | number>(null);
   useEffect(() => {
+    /*Triggered on IOS expiration*/
     const sub = addExpirationListener((event) => {
       console.log(event);
     });
@@ -79,6 +76,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    /*We do this so we can see when app is backgrounded*/
     intervalRef.current = setInterval(() => {
       console.log("Logging every 1 second, so we can see when the app gets \"paused\"");
     }, 1000);
@@ -94,14 +92,14 @@ export default function App() {
         getForegroundIdentifiers().then(r => console.log(r));
       }} />
       <Button
-        title="startForegroundAction"
+        title="Run a foreground action"
         onPress={async () => {
           try {
 
 
             console.log("BEFORE runForegroundedAction");
-
             await runForegroundedAction(async (api) => {
+              /*I added a helper function but you can do all logic in here*/
               await FunciTestFunction(api);
             }, {
               headlessTaskName: "create_task",
@@ -130,7 +128,7 @@ export default function App() {
           }
         }}
       />
-      <Button title={"stopForegroundAction"} onPress={async () => {
+      <Button title={"Stop current running foreground action"} onPress={async () => {
         if (currentRunningId.current) {
           console.log("Stopping foreground action with id:", currentRunningId.current);
           await stopForegroundAction(currentRunningId.current);
@@ -140,7 +138,7 @@ export default function App() {
           console.log("No running foreground action");
         }
       }} />
-      <Button title={"forceStopAllForegroundActions"} onPress={async () => {
+      <Button title={"Force stop all running foreground actions"} onPress={async () => {
         await forceStopAllForegroundActions();
       }} />
     </View>
