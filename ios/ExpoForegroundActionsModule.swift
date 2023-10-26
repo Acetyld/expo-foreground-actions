@@ -21,7 +21,7 @@ public class ExpoForegroundActionsModule: Module {
             
             backgroundTaskIdentifier = UIApplication.shared.beginBackgroundTask {
                 // Expiration block, perform cleanup including endBackgroundTask
-                self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining);
+                self.onExpiration(amount: UIApplication.shared.backgroundTimeRemaining, identifier:backgroundTaskIdentifier);
                 UIApplication.shared.endBackgroundTask(backgroundTaskIdentifier)
             }
             backgroundTaskIdentifiers.append(backgroundTaskIdentifier)
@@ -47,14 +47,14 @@ public class ExpoForegroundActionsModule: Module {
         }
         
         AsyncFunction("forceStopAllForegroundActions") { (promise: Promise) in
-              for identifier in backgroundTaskIdentifiers {
-                  print("Stopping identifier:",identifier.rawValue)
-                  UIApplication.shared.endBackgroundTask(identifier)
-              }
-              backgroundTaskIdentifiers.removeAll()
-              promise.resolve()
-          }
-          
+            for identifier in backgroundTaskIdentifiers {
+                print("Stopping identifier:",identifier.rawValue)
+                UIApplication.shared.endBackgroundTask(identifier)
+            }
+            backgroundTaskIdentifiers.removeAll()
+            promise.resolve()
+        }
+        
         
         AsyncFunction("getBackgroundTimeRemaining") { (promise: Promise) in
             promise.resolve(UIApplication.shared.backgroundTimeRemaining)
@@ -68,9 +68,10 @@ public class ExpoForegroundActionsModule: Module {
     }
     
     @objc
-    private func onExpiration(amount:Double) {
+    private func onExpiration(amount:Double,identifier:UIBackgroundTaskIdentifier) {
         sendEvent(ON_EXPIRATION_EVENT, [
-            "remaining": amount
+            "remaining": amount,
+            "identifier": identifier.rawValue
         ])
     }
 }

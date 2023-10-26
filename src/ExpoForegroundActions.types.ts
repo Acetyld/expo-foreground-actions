@@ -1,5 +1,6 @@
 export type ExpireEventPayload = {
   remaining: number;
+  identifier: number;
 };
 
 export interface AndroidSettings {

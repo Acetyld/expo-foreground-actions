@@ -31,7 +31,7 @@ const FunciTestFunction = async ({
                                  }: ForegroundApi) => {
   let time = Date.now();
   let duration = 0;
-  while (duration < 10) {
+  while (duration < 50) {
     console.log("Logging every 1 second... from foreground!", time);
     await wait(1000); // Wait for 1 second
     duration += 1;
@@ -70,8 +70,7 @@ export default function App() {
   const currentRunningId = useRef<null | number>(null);
   useEffect(() => {
     const sub = addExpirationListener((event) => {
-      console.log(event.remaining);
-      /*Here we should put the task back to pending, because we need to create a new foreground actions to get new background time*/
+      console.log(event);
     });
 
     return () => {
