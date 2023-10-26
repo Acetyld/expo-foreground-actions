@@ -48,6 +48,8 @@ On IOS we get roughly 30 seconds (mostly) and on android we can run a foreground
 But from my experience, you can safely run a foreground task for 30 seconds on both platforms.
 But... remember doing a location tracking in background is not the goal of this library, this is because IOS only has 30 seconds on average, there are better alternatives for this like using a WorkManager or a GTaskScheduler
 
+If you want to use this package please look at the [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example)
+
 ---
 ## 📦 Features
 
@@ -110,6 +112,7 @@ Please ensure you have the following dependencies installed on your system:
 `- ℹ️ Expo v49+`
 
 `- ℹ️ Bare/Manage workflow, we do not support Expo GO`
+
 ### 🔧 Installation
 
 1. Clone the expo-foreground-actions repository:
@@ -141,11 +144,35 @@ Please ensure you have the following dependencies installed on your system:
 
 ### 🤖 How to use?
 
+For now there is not dedicated documentation, i showed off the current methods in the example app. See below
+
+- See [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) folder on how to use this package.
+
+#### **Methods**
+
+| Function Name                   | Description                                            | Parameters                                                                                          | Return Type         |
+|---------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|---------------------|
+| `startForegroundAction`         | Start a foreground action on Android or iOS.           | `options?: AndroidSettings`                                                                         | `Promise<number>`   |
+| `runForegroundedAction`         | Run a foreground action with specified settings.       | `act: (api: ForegroundApi) => Promise<void>, androidSettings: AndroidSettings, settings?: Settings` | `Promise<void>`     |
+| `updateForegroundedAction`      | Update the settings of a foreground action on Android. | `id: number, options: AndroidSettings`                                                              | `Promise<void>`     |
+| `stopForegroundAction`          | Stop a foreground action with the given identifier.    | `id: number`                                                                                        | `Promise<void>`     |
+| `forceStopAllForegroundActions` | Forcefully stop all foreground actions.                | None                                                                                                | `Promise<void>`     |
+| `getForegroundIdentifiers`      | Get the identifiers of active foreground actions.      | None                                                                                                | `Promise<number[]>` |
+| `getRanTaskCount`               | Get the count of executed tasks.                       | None                                                                                                | `number`            |
+| `getBackgroundTimeRemaining`    | Get the remaining background time on iOS.              | None                                                                                                | `Promise<number>`   |
+| `addExpirationListener`         | Add a listener for expiration events.                  | `listener: (event: ExpireEventPayload) => void`                                                     | `Subscription`      |
+
+Please note that some functions have optional parameters, and the return types are asynchronous promises or specific data types.
+
+#### **Interfaces/Errors**
 
 
-► See [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) folder on how to use this package.
-
-
+| Interface Name             | Description                                                                    | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|----------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ExpireEventPayload`       | An interface representing the payload of an expiration event.                  | - `remaining`: number - The remaining time before expiration. - `identifier`: number - The identifier associated with the action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `AndroidSettings`          | An interface representing settings for Android foreground actions.             | - `headlessTaskName`: string - The name of the headless task. - `notificationTitle`: string - Title for the notification. - `notificationDesc`: string - Description for the notification. - `notificationColor`: string - Color for the notification. - `notificationIconName`: string - Name of the notification icon. - `notificationIconType`: string - Type of the notification icon. - `notificationProgress`: number - Current progress value for the notification. - `notificationMaxProgress`: number - Maximum progress value for the notification. - `notificationIndeterminate`: boolean - Whether the notification progress is indeterminate. - `linkingURI`: string - URI to link to. |
+| `Settings`                 | An interface representing additional settings for foreground actions.          | - `events`: Object - Event callbacks.   - `onIdentifier`: Function - Callback function when an identifier is generated. - `runInJS`: boolean - Indicates whether to run the action in JavaScript.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `ForegroundApi`            | An interface representing the API available to the foreground action function. | - `headlessTaskName`: string - The name of the headless task. - `identifier`: number - The identifier associated with the action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
