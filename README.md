@@ -29,7 +29,7 @@
 - [📂 repository Structure](#-repository-structure)
 - [🚀 Getting Started](#-getting-started)
    - [🔧 Installation](#-installation)
-   - [🤖 How to use](#-running-expo-foreground-actions)
+   - [🤖 How to use](#-how-to-use)
 - [🛣 Roadmap](#-roadmap)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
