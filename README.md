@@ -30,6 +30,8 @@
 - [🚀 Getting Started](#-getting-started)
    - [🔧 Installation](#-installation)
    - [🤖 How to use](#-how-to-use)
+   - [🤖 Functions](#-functions)
+   - [🤖 Interfaces](#-interfaces)
 - [🛣 Roadmap](#-roadmap)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
@@ -148,31 +150,141 @@ For now there is not dedicated documentation, i showed off the current methods i
 
 - See [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) folder on how to use this package.
 
-#### **Methods**
+### 🤖 Functions
 
-| Function Name                   | Description                                            | Parameters                                                                                          | Return Type         |
-|---------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|---------------------|
-| `startForegroundAction`         | Start a foreground action on Android or iOS.           | `options?: AndroidSettings`                                                                         | `Promise<number>`   |
-| `runForegroundedAction`         | Run a foreground action with specified settings.       | `act: (api: ForegroundApi) => Promise<void>, androidSettings: AndroidSettings, settings?: Settings` | `Promise<void>`     |
-| `updateForegroundedAction`      | Update the settings of a foreground action on Android. | `id: number, options: AndroidSettings`                                                              | `Promise<void>`     |
-| `stopForegroundAction`          | Stop a foreground action with the given identifier.    | `id: number`                                                                                        | `Promise<void>`     |
-| `forceStopAllForegroundActions` | Forcefully stop all foreground actions.                | None                                                                                                | `Promise<void>`     |
-| `getForegroundIdentifiers`      | Get the identifiers of active foreground actions.      | None                                                                                                | `Promise<number[]>` |
-| `getRanTaskCount`               | Get the count of executed tasks.                       | None                                                                                                | `number`            |
-| `getBackgroundTimeRemaining`    | Get the remaining background time on iOS.              | None                                                                                                | `Promise<number>`   |
-| `addExpirationListener`         | Add a listener for expiration events.                  | `listener: (event: ExpireEventPayload) => void`                                                     | `Subscription`      |
+#### `runForegroundedAction`
 
-Please note that some functions have optional parameters, and the return types are asynchronous promises or specific data types.
+```typescript
+export const runForegroundedAction = async (
+  act: (api: ForegroundApi) => Promise<void>,
+  androidSettings: AndroidSettings,
+  settings: Settings = { runInJS: false }
+): Promise<void>;
+```
 
-#### **Interfaces/Errors**
+- `act`: The foreground action function to be executed.
+- `androidSettings`: Android-specific settings for the foreground action.
+- `settings`: Additional settings for the foreground action.
+
+#### `startForegroundAction`
+
+```typescript
+export const startForegroundAction = async (
+  options?: AndroidSettings
+): Promise<number>;
+```
+
+- `options`: Android-specific settings for the foreground action.
+
+#### `stopForegroundAction`
+
+```typescript
+export const stopForegroundAction = async (id: number): Promise<void>;
+```
+
+- `id`: The unique identifier of the foreground action to stop.
+
+#### `updateForegroundedAction`
+
+```typescript
+export const updateForegroundedAction = async (
+  id: number,
+  options: AndroidSettings
+): Promise<void>;
+```
+
+- `id`: The unique identifier of the foreground action to update.
+- `options`: Updated Android-specific settings for the foreground action.
+
+#### `forceStopAllForegroundActions`
+
+```typescript
+export const forceStopAllForegroundActions = async (): Promise<void>;
+```
+
+- Forcefully stops all running foreground actions.
+
+#### `getForegroundIdentifiers`
+
+```typescript
+export const getForegroundIdentifiers = async (): Promise<number>;
+```
+
+- Retrieves the identifiers of all currently running foreground actions.
+
+#### `getRanTaskCount`
+
+```typescript
+export const getRanTaskCount = () => ranTaskCount;
+```
+
+- Retrieves the count of tasks that have run.
+
+#### `getBackgroundTimeRemaining`
+
+```typescript
+export const getBackgroundTimeRemaining = async (): Promise<number>;
+```
+
+- Retrieves the remaining background execution time on iOS.
 
 
-| Interface Name       | Description                                                                    | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-|----------------------|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ExpireEventPayload` | An interface representing the payload of an expiration event.                  | - `remaining`: number - The remaining time before expiration. <br/>- `identifier`: number <br/>- The identifier associated with the action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `AndroidSettings`    | An interface representing settings for Android foreground actions.             | - `headlessTaskName`: string - The name of the headless task. <br/>- `notificationTitle`: string - Title for the notification. <br/>- `notificationDesc`: string - Description for the notification. <br/>- `notificationColor`: string - Color for the notification. <br/>- `notificationIconName`: string - Name of the notification icon. <br/>- `notificationIconType`: string <br/>- Type of the notification icon. <br/>- `notificationProgress`: number <br/>- Current progress value for the notification. <br/>- `notificationMaxProgress`: number <br/>- Maximum progress value for the notification. <br/>- `notificationIndeterminate`: boolean <br/>- Whether the notification progress is indeterminate. <br/>- `linkingURI`: string - URI to link to. |
-| `Settings`           | An interface representing additional settings for foreground actions.          | - `events`: Object - Event callbacks.   - `onIdentifier`: Function <br/>- Callback function when an identifier is generated. <br/>- `runInJS`: boolean - Indicates whether to run the action in JavaScript.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `ForegroundApi`      | An interface representing the API available to the foreground action function. | - `headlessTaskName`: string - The name of the headless task. <br/>- `identifier`: number - The identifier associated with the action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+### 🤖 Interfaces
+
+#### `ExpireEventPayload`
+
+```typescript
+export type ExpireEventPayload = {
+  remaining: number;
+  identifier: number;
+};
+```
+
+- `remaining`: The remaining time in seconds before the foreground action expires.
+- `identifier`: The unique identifier of the foreground action.
+
+#### `AndroidSettings`
+
+```typescript
+export interface AndroidSettings {
+  headlessTaskName: string;
+  notificationTitle: string;
+  notificationDesc: string;
+  notificationColor: string;
+  notificationIconName: string;
+  notificationIconType: string;
+  notificationProgress: number;
+  notificationMaxProgress: number;
+  notificationIndeterminate: boolean;
+  linkingURI: string;
+}
+```
+
+- `headlessTaskName`: Name of the headless task associated with the foreground action.
+- `notificationTitle`: Title of the notification shown during the foreground action.
+- `notificationDesc`: Description of the notification.
+- `notificationColor`: Color of the notification.
+- `notificationIconName`: Name of the notification icon.
+- `notificationIconType`: Type of the notification icon.
+- `notificationProgress`: Current progress value for the notification.
+- `notificationMaxProgress`: Maximum progress value for the notification.
+- `notificationIndeterminate`: Indicates if the notification progress is indeterminate.
+- `linkingURI`: URI to link to when the notification is pressed.
+
+#### `Settings`
+
+```typescript
+export interface Settings {
+  events?: {
+    onIdentifier?: (identifier: number) => void;
+  }
+  runInJS?: boolean,
+}
+```
+
+- `events`: Event handlers for foreground actions.
+   - `onIdentifier`: A callback function called when an identifier is generated.
+- `runInJS`: Indicates whether to run the foreground action without using a headless task or ios background task.
 
 ---
 
