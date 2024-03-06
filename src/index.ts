@@ -87,7 +87,6 @@ export const runForegroundedAction = async (act: (api: ForegroundApi) => Promise
       await runIos(action, settings);
       return;
     }
-    console.log("Running on unknown platform is not supported");
     return;
   } catch (e) {
     throw e;
@@ -96,7 +95,6 @@ export const runForegroundedAction = async (act: (api: ForegroundApi) => Promise
 
 
 const runJS = async (action: (identifier: number) => Promise<void>, settings: Settings) => {
-  console.log("Running on JS");
   jsIdentifier++;
   settings?.events?.onIdentifier?.(jsIdentifier);
   await action(jsIdentifier);
@@ -104,16 +102,13 @@ const runJS = async (action: (identifier: number) => Promise<void>, settings: Se
 };
 
 const runIos = async (action: (identifier: number) => Promise<void>, settings: Settings) => {
-  console.log("Running on IOS");
   const identifier = await startForegroundAction();
-  console.log("[IOS]: identifier", identifier);
   settings?.events?.onIdentifier?.(identifier);
   try {
     await action(identifier);
   } catch (e) {
     throw e;
   } finally {
-    console.log("Stopping on IOS");
     await stopForegroundAction(identifier);
   }
 };
@@ -122,11 +117,9 @@ const runAndroid = async (action: (identifier: number) => Promise<void>, options
   try {
     /*First we register the headless task so we can run it from the Foreground service*/
     AppRegistry.registerHeadlessTask(options.headlessTaskName, () => async (taskdata: { notificationId: number }) => {
-      console.log("[ANDROID]: taskdata", taskdata);
       const { notificationId } = taskdata;
       /*Then we start the actuall foreground action, we all do this in the headless task, without touching UI, we can still update UI be using something like Realm for example*/
       try {
-        console.log();
         settings?.events?.onIdentifier?.(notificationId);
         await action(notificationId);
         await stopForegroundAction(notificationId);

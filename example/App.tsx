@@ -1,5 +1,6 @@
 import {
-  addExpirationListener, forceStopAllForegroundActions,
+  addExpirationListener,
+  forceStopAllForegroundActions,
   getBackgroundTimeRemaining,
   getForegroundIdentifiers,
   runForegroundedAction,
@@ -7,15 +8,8 @@ import {
   updateForegroundedAction
 } from "expo-foreground-actions";
 import { useEffect, useRef } from "react";
-import {
-  Button,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  View
-} from "react-native";
+import { Button, Linking, Platform, StatusBar, StyleSheet, View } from "react-native";
 import { ForegroundApi } from "expo-foreground-actions/ExpoForegroundActions.types";
-import { Linking } from "react-native";
 
 Linking.addEventListener("url", onUrl);
 
@@ -99,7 +93,6 @@ export default function App() {
           try {
 
 
-            console.log("BEFORE runForegroundedAction");
             await runForegroundedAction(async (api) => {
               /*I added a helper function but you can do all logic in here*/
               await MyHelperFunction(api);
@@ -122,11 +115,9 @@ export default function App() {
                 }
               }
             });
-
-            console.log("AFTER runForegroundedAction");
-
-          } catch (e) {
-            console.log(e);
+          } catch (e: any) {
+            console.log("Error:", e?.message);
+            throw e;
           }
         }}
       />

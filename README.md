@@ -13,7 +13,11 @@
 <img src="https://img.shields.io/badge/Swift-F05138.svg?style=flat-square&logo=Swift&logoColor=white" alt="Swift" />
 <img src="https://img.shields.io/badge/Kotlin-7F52FF.svg?style=flat-square&logo=Kotlin&logoColor=white" alt="Kotlin" />
 <img src="https://img.shields.io/badge/Expo-000020.svg?style=flat-square&logo=Expo&logoColor=white" alt="Expo" />
+
 </p>
+<a href="https://www.npmjs.com/package/expo-foreground-actions">
+  <img src="https://img.shields.io/npm/v/expo-foreground-actions?style=flat-square" alt="npm version">
+</a>
 <img src="https://img.shields.io/github/license/Acetyld/expo-foreground-actions?style=flat-square&color=5D6D7E" alt="GitHub license" />
 <img src="https://img.shields.io/github/last-commit/Acetyld/expo-foreground-actions?style=flat-square&color=5D6D7E" alt="git-last-commit" />
 <img src="https://img.shields.io/github/commit-activity/m/Acetyld/expo-foreground-actions?style=flat-square&color=5D6D7E" alt="GitHub commit activity" />
@@ -23,15 +27,16 @@
 ---
 
 ## 📖 Table of Contents
+
 - [📖 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
 - [📦 Features](#-features)
 - [📂 repository Structure](#-repository-structure)
 - [🚀 Getting Started](#-getting-started)
-   - [🔧 Installation](#-installation)
-   - [🤖 How to use](#-how-to-use)
-   - [🤖 Functions](#-functions)
-   - [🤖 Interfaces](#-interfaces)
+    - [🔧 Installation](#-installation)
+    - [🤖 How to use](#-how-to-use)
+    - [🤖 Functions](#-functions)
+    - [🤖 Interfaces](#-interfaces)
 - [🛣 Roadmap](#-roadmap)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
@@ -39,38 +44,50 @@
 
 ---
 
-
 ## 📍 Overview
 
-The main goal of this library is to provide a way to run the **ios**: *beginBackgroundTaskWithName* and **android**: *startForegroundService* methods.
+Start actions that continue to run in the grace period after the user switches apps. This library facilitates the
+execution of **ios**'s `beginBackgroundTaskWithName` and **android**'s `startForegroundService` methods. The primary
+objective is to emulate the behavior of `beginBackgroundTaskWithName`, allowing actions to persist even when the user
+switches to another app. Examples include sending chat messages, creating tasks, or running synchronizations.
 
-My goal for this library is to do what beginBackgroundTaskWithName was made for, start a action that could still be active when the user goes to the next app, for example, sending a chat message, creating a task or even running a sync.
+On iOS, the grace period typically lasts around 30 seconds, while on Android, foreground tasks can run for a longer
+duration, subject to device models and background policies. In general, a foreground task can safely run for about 30
+seconds on both platforms. However, it's important to note that this library is not intended for background location
+tracking. iOS's limited 30-second window makes it impractical for such purposes. For background location tracking,
+alternatives like WorkManager or GTaskScheduler are more suitable.
 
-On IOS we get roughly 30 seconds (mostly) and on android we can run a foreground task pretty long but ofcourse it always depends on the android model and their background policy.
-But from my experience, you can safely run a foreground task for 30 seconds on both platforms.
-But... remember doing a location tracking in background is not the goal of this library, this is because IOS only has 30 seconds on average, there are better alternatives for this like using a WorkManager or a GTaskScheduler
-
-If you want to use this package please look at the [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example)
+For usage instructions, please refer to
+the [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) provided.
 
 ---
+
 ## 📦 Features
 
-**IOS & Android**
-- Run javascript while app went to background
-- Run multiple foreground actions at the same time
-- Force stop all foreground actions
+### For IOS & Android:
 
-**Android**
-- Show a notification with a title and description and optional progress bar. Also support for linking.
-- Support for new android 34+ background policy (so no actual notification is shown, but the foreground service is still running and it can be seen from the notification drawer)
+- Execute JavaScript while the app is in the background.
+- Run multiple foreground actions simultaneously.
+- Forcefully terminate all foreground actions.
 
-**Ios**
-- Be notified when the background time you get is almost over so you can save your data and stop the task.
+### For Android:
 
-**Web**
-- Not fully supported, we suggest using runInJS for this because a error would be thrown if you try to run a foreground action on web.
+- Display notifications with customizable titles, descriptions, and optional progress bars, along with support for deep
+  linking.
+- Comply with the latest Android 34+ background policy, ensuring that foreground services continue to run without
+  displaying a visible notification. Users can still access these services from the notification drawer.
+
+### For IOS:
+
+- Receive notifications when the background execution time is about to expire. This feature allows users to save their
+  data and terminate tasks gracefully.
+
+### Web Support:
+
+- Limited support for web platforms. We recommend using the `runInJS` method due to potential errors when attempting to
+  run foreground actions on web browsers.
+
 ---
-
 
 ## 📂 Repository Structure
 
@@ -129,8 +146,10 @@ Please ensure you have the following dependencies installed on your system:
     yarn add expo-foreground-actions
     ```
 
-2. Install the plugin, for now download the repo and copy the [plugins](https://github.com/Acetyld/expo-foreground-actions/tree/main/plugins) folder to your project root.
-3. Then update your app.json to include the plugin and a scheme if u wanna use the plugin with a deeplink. <br/>https://docs.expo.dev/guides/linking/
+2. Install the plugin, for now download the repo and copy
+   the [plugins](https://github.com/Acetyld/expo-foreground-actions/tree/main/plugins) folder to your project root.
+3. Then update your app.json to include the plugin and a scheme if u wanna use the plugin with a
+   deeplink. <br/>https://docs.expo.dev/guides/linking/
     ```sh
    "expo": {
       "scheme": "myapp",
@@ -142,15 +161,17 @@ Please ensure you have the following dependencies installed on your system:
    }
     ```
 
-3. Make sure the plugin is loaded in your app.json, you can do this by running **prebuild on managed** or by running **pod install/gradle build** on bare.
+3. Make sure the plugin is loaded in your app.json, you can do this by running **prebuild on managed** or by running *
+   *pod install/gradle build** on bare.
 
 ### 🤖 How to use?
 
-For now there is not dedicated documentation, i showed off the current methods in the example app. See below
-
-- See [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example) folder on how to use this package.
+For the time being, dedicated documentation is not available. However, you can explore the usage of current methods in
+the provided example app. Refer to the [Example](https://github.com/Acetyld/expo-foreground-actions/tree/main/example)
+folder to understand how to utilize this package effectively.
 
 ![Example](assets/App_tsx.png)
+
 ### 🤖 Functions
 
 #### `runForegroundedAction`
@@ -229,7 +250,6 @@ export const getBackgroundTimeRemaining = async (): Promise<number>;
 
 - Retrieves the remaining background execution time on iOS.
 
-
 ### 🤖 Interfaces
 
 #### `ExpireEventPayload`
@@ -284,16 +304,16 @@ export interface Settings {
 ```
 
 - `events`: Event handlers for foreground actions.
-   - `onIdentifier`: A callback function called when an identifier is generated.
+    - `onIdentifier`: A callback function called when an identifier is generated.
 - `runInJS`: Indicates whether to run the foreground action without using a headless task or ios background task.
 
 ---
 
-
 ## 🛣 Project Roadmap
 
-> - [X] `ℹ️  Task 1: Initial launch`
-> - [X] `ℹ️  Task 2: Possiblity to run multiple foreground tasks`
+> - [X] `ℹ️ Task 1: Initial launch`
+> - [X] `ℹ️ Task 2: Possiblity to run multiple foreground tasks`
+> - [ ] `ℹ️ Any idea's are welcome =)`
 
 ---
 
@@ -301,9 +321,12 @@ export interface Settings {
 
 Contributions are welcome! Here are several ways you can contribute:
 
-- **[Submit Pull Requests](https://github.com/Acetyld/expo-foreground-actions/blob/main/CONTRIBUTING.md)**: Review open PRs, and submit your own PRs.
-- **[Join the Discussions](https://github.com/Acetyld/expo-foreground-actions/discussions)**: Share your insights, provide feedback, or ask questions.
-- **[Report Issues](https://github.com/Acetyld/expo-foreground-actions/issues)**: Submit bugs found or log feature requests for ACETYLD.
+- **[Submit Pull Requests](https://github.com/Acetyld/expo-foreground-actions/blob/main/CONTRIBUTING.md)**: Review open
+  PRs, and submit your own PRs.
+- **[Join the Discussions](https://github.com/Acetyld/expo-foreground-actions/discussions)**: Share your insights,
+  provide feedback, or ask questions.
+- **[Report Issues](https://github.com/Acetyld/expo-foreground-actions/issues)**: Submit bugs found or log feature
+  requests for ACETYLD.
 
 #### *Contributing Guidelines*
 
@@ -328,7 +351,8 @@ Contributions are welcome! Here are several ways you can contribute:
    ```sh
    git push origin new-feature-x
    ```
-7. **Submit a Pull Request**: Create a PR against the original project repository. Clearly describe the changes and their motivations.
+7. **Submit a Pull Request**: Create a PR against the original project repository. Clearly describe the changes and
+   their motivations.
 
 Once your PR is reviewed and approved, it will be merged into the main branch.
 
@@ -338,14 +362,17 @@ Once your PR is reviewed and approved, it will be merged into the main branch.
 
 ## 📄 License
 
-
-This project is protected under the [MIT](https://choosealicense.com/licenses) License. For more details, refer to the [LICENSE](https://choosealicense.com/licenses/) file.
+This project is protected under the [MIT](https://choosealicense.com/licenses) License. For more details, refer to
+the [LICENSE](https://choosealicense.com/licenses/) file.
 
 ---
 
 ## 👏 Acknowledgments
 
 - Idea/inspiration from https://github.com/Rapsssito/react-native-background-actions
+- [Expo](https://expo.dev) for providing a platform to build universal apps using React Native.
+- [Benedikt](https://twitter.com/bndkt) for mentioning this package in the "thisweekinreact"
+  newsletter: [Week 176](https://thisweekinreact.com/newsletter/176)
 
 [**Return**](#Top)
 
